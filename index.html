@@ -1,0 +1,80 @@
+<!doctype html>
+<head>
+</head>
+<body>
+	<h1>SoundCloud Search</h1>
+	<form id="sc-search" action="#">
+		<ul>
+			<li><label for="q">Search for:</label><input id="q" name="q"></li>
+			<li><label for="min-duration">Minimum duration(minutes):</label><input id="min-duration" name="min-duration"></li>
+			<li><label for="max-duration">Maximum duration(minutes):</label><input id="max-duration" name="max-duration"></li>
+			<li><input type="submit"></li>
+		</ul>
+	</form>
+	<ul id="results">
+	</ul>
+</body>
+<script src="//connect.soundcloud.com/sdk.js"></script>
+<script>
+	SC.initialize({
+		client_id: '6adc91d019ac1bf55011a7ee63e8610e'
+	});
+
+	document.body.onload = function(){
+		var form = document.getElementById('sc-search');
+		form.addEventListener('submit', SCSearch);
+	};
+
+	function SCSearch(e) {
+		e.preventDefault();
+
+		var form = document.getElementById('sc-search');
+
+		var duration = {};
+		duration.from = form.querySelector('#min-duration').value * 60000 || null;
+		duration.to = form.querySelector('#max-duration').value * 60000 || null;
+
+		var queryParams = {
+			duration: {from: duration.from, to: duration.to},
+			limit: 5,
+			q: form.querySelector('#q').value
+		};
+		SC.get('/tracks', queryParams, function(tracks){
+			var resList = document.querySelector('#results');
+			tracks.forEach(function(track){
+				var newTrack = new Track(track);
+				newTrack.appendTo(resList);
+			});
+		});
+		return false;
+	}
+
+	var Track = function(trackData) {
+		this.data = trackData;
+		this.setupEl();
+	};
+
+	Track.prototype.setupEl = function() {
+		this.el = document.createElement('li');
+		this.el.className = 'track-item';
+
+		var linkEl = document.createElement('a');
+		linkEl.setAttribute('href', this.data.permalink_url);
+
+		var albumArt = document.createElement('img');
+		albumArt.setAttribute('src', this.data.artwork_url);
+
+		var elTitle = document.createElement('h3');
+		elTitle.className = 'track-title';
+		elTitle.textContent = this.data.title;
+
+		linkEl.appendChild(albumArt);
+		linkEl.appendChild(elTitle);
+
+		this.el.appendChild(linkEl);
+	};
+
+	Track.prototype.appendTo = function(parent) {
+		parent.appendChild(this.el);
+	};
+</script>
