@@ -1,13 +1,57 @@
 <!doctype html>
 <head>
+	<style>
+		body {
+			font-family: sans-serif;
+		}
+
+		#results, #sc-search ul {
+			padding: 0;
+			list-style: none;
+		}
+
+		.track-item {
+			margin: 10px 0;
+			padding: 5px;
+			background: #ddd;
+		}
+
+		.track-item a, .track-item a:link {
+			color: rgb(73, 155, 230);
+		}
+
+	 .track-item a:visited {
+		 	color: rgb(230, 173, 73);
+		}
+
+		.track-item a:hover, .track-item a:active, .track-item a:focus {
+			color: #000;
+		} 
+
+		.track-item img {
+			width: 50px;
+			height: 50px;
+			display: inline-block;
+		}
+
+		.track-item h3 {
+			margin: 0 0 0 10px;
+			font-size: 20px;
+			display: inline-block;
+		}
+	</style>
 </head>
 <body>
 	<h1>SoundCloud Search</h1>
 	<form id="sc-search" action="#">
 		<ul>
 			<li><label for="q">Search for:</label><input id="q" name="q"></li>
+			<li><label for="genres">Genres:</label><input id="genres" name="genres"></li>
+			<li><label for="tags">Tags:</label><input id="tags" name="tags"></li>
 			<li><label for="min-duration">Minimum duration(minutes):</label><input id="min-duration" name="min-duration"></li>
 			<li><label for="max-duration">Maximum duration(minutes):</label><input id="max-duration" name="max-duration"></li>
+			<li><label for="min-bpm">Minimum bpm:</label><input id="min-bpm" name="min-bpm"></li>
+			<li><label for="max-bpm">Maximum bpm:</label><input id="max-bpm" name="max-bpm"></li>
 			<li><input type="submit"></li>
 		</ul>
 	</form>
@@ -29,29 +73,31 @@
 		e.preventDefault();
 
 		var form = document.getElementById('sc-search');
+		var resList = document.querySelector('#results');
+
+		var query = new Query(form);
 
 		var duration = {};
 		duration.from = form.querySelector('#min-duration').value * 60000 || null;
 		duration.to = form.querySelector('#max-duration').value * 60000 || null;
 
-		var queryParams = {
-			duration: {from: duration.from, to: duration.to},
-			limit: 5,
-			q: form.querySelector('#q').value
-		};
-		SC.get('/tracks', queryParams, function(tracks){
-			var resList = document.querySelector('#results');
-			tracks.forEach(function(track){
-				var newTrack = new Track(track);
-				newTrack.appendTo(resList);
-			});
+		resList.innerHTML = '';
+		SC.get('/tracks', query, function(tracks){
+			if (!tracks.errors) {
+				tracks.forEach(function(track){
+					var newTrack = new Track(track);
+					newTrack.appendTo(resList);
+				});
+			}
+			else {
+				resList.textContent = "No tracks found.";
+			}
 		});
 		return false;
 	}
 
 	var Track = function(trackData) {
 		this.data = trackData;
-		this.setupEl();
 	};
 
 	Track.prototype.setupEl = function() {
@@ -75,6 +121,25 @@
 	};
 
 	Track.prototype.appendTo = function(parent) {
+		this.setupEl();
 		parent.appendChild(this.el);
 	};
+
+	var Query = function(form) {
+		this.q = form.querySelector('#q').value || null;
+
+		this.genres = form.querySelector('#genres').value || null;
+		this.tags = form.querySelector('#tags').value || null;
+
+		this.bpm = {};
+		this.bpm.from = form.querySelector('#min-bpm').value || null;
+		this.bpm.to = form.querySelector('#max-bpm').value || null;
+
+		this.duration = {};
+		this.duration.from = form.querySelector('#min-duration').value * 60000 || null;
+		this.duration.to = form.querySelector('#max-duration').value * 60000 || null;
+
+		this.limit = 5;
+	};
+
 </script>
