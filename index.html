@@ -32,12 +32,23 @@
 			width: 50px;
 			height: 50px;
 			display: inline-block;
+			float: left;
+		}
+
+		.track-item .track-data {
+			float: left;
 		}
 
 		.track-item h3 {
 			margin: 0 0 0 10px;
 			font-size: 20px;
 			display: inline-block;
+		}
+
+		.group:after {
+			content: "";
+			display: table;
+			clear: both;
 		}
 	</style>
 </head>
@@ -102,7 +113,7 @@
 
 	Track.prototype.setupEl = function() {
 		this.el = document.createElement('li');
-		this.el.className = 'track-item';
+		this.el.className = 'track-item group';
 
 		var linkEl = document.createElement('a');
 		linkEl.setAttribute('href', this.data.permalink_url);
