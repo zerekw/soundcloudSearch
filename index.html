@@ -1,56 +1,6 @@
 <!doctype html>
 <head>
-	<style>
-		body {
-			font-family: sans-serif;
-		}
-
-		#results, #sc-search ul {
-			padding: 0;
-			list-style: none;
-		}
-
-		.track-item {
-			margin: 10px 0;
-			padding: 5px;
-			background: #ddd;
-		}
-
-		.track-item a, .track-item a:link {
-			color: rgb(73, 155, 230);
-		}
-
-	 .track-item a:visited {
-		 	color: rgb(230, 173, 73);
-		}
-
-		.track-item a:hover, .track-item a:active, .track-item a:focus {
-			color: #000;
-		} 
-
-		.track-item img {
-			width: 50px;
-			height: 50px;
-			display: inline-block;
-			float: left;
-		}
-
-		.track-item .track-data {
-			float: left;
-		}
-
-		.track-item h3 {
-			margin: 0 0 0 10px;
-			font-size: 20px;
-			display: inline-block;
-		}
-
-		.group:after {
-			content: "";
-			display: table;
-			clear: both;
-		}
-	</style>
+	<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 	<h1>SoundCloud Search</h1>
@@ -69,6 +19,24 @@
 	<ul id="results">
 	</ul>
 </body>
+<script src="/bower_components/handlebars/handlebars.min.js"></script>
+<script id="track-template" type="text/x-handlebars-template">
+	<li class="track-item group">
+		<a href="{{url}}">
+			<img src="{{img}}">
+			<h3 class="track-title"><span class="track-duration">{{duration}}</span> - {{title}}</h3>
+		</a>
+		<ul class="track-data">
+			<li class="track-bpm">BPM - {{bpm}}</li>
+			<li class="track-genre">Genre - {{genre}}</li>
+			<li class="track-tags">Tags - 
+				{{#each tags}}
+					<span class="track-tag">{{this}}</span> 
+				{{/each}}
+			</li>
+		</ul>
+	</li>
+</script>
 <script src="//connect.soundcloud.com/sdk.js"></script>
 <script>
 	SC.initialize({
@@ -131,9 +99,45 @@
 		this.el.appendChild(linkEl);
 	};
 
+	Track.prototype.setupContent = function() {
+		var context = {
+			title: this.data.title,
+			url: this.data.permalink_url,
+			img: this.data.artwork_url,
+			duration: this.formatDuration(),
+			bpm: this.data.bpm,
+			genre: this.data.genre,
+			tags: this.formatTags()
+		};
+		if (typeof this.template === 'undefined') {
+			this.template = Handlebars.compile(document.getElementById('track-template').innerHTML);
+		}
+		// debugger;
+		this.el = this.template(context);
+	};
+
 	Track.prototype.appendTo = function(parent) {
-		this.setupEl();
-		parent.appendChild(this.el);
+		this.setupContent();
+		parent.innerHTML = parent.innerHTML + this.el;
+	};
+
+	Track.prototype.formatDuration = function() {
+		var hours = Math.round((this.data.duration / (1000*60*60)) % 24);
+		var minutes = Math.round((this.data.duration / (1000*60)) % 60);
+		var seconds = Math.round((this.data.duration / (1000)) % 60);
+		var duration = ("0" + Number(seconds)).slice(-2);
+		duration = ("0" + Number(minutes)).slice(-2) + ":" + duration;
+		duration = ("0" + Number(hours)).slice(-2) + ":" + duration;
+
+		return duration;
+	};
+
+	Track.prototype.formatTags = function() {
+		var tags = this.data.tag_list.split(" ");
+		for (var i = 0; i < tags.length; i++) {
+			tags[i] = tags[i].replace(/"/g, "");
+		}
+		return tags;
 	};
 
 	var Query = function(form) {
